@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>D3 Bar Chart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px;
+        background: #fafafa;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 20px;
+      }
+      .bar {
+        fill: steelblue;
+      }
+      .bar:hover {
+        fill: #2c5f8a;
+      }
+      .value-label {
+        font-size: 12px;
+        fill: #333;
+        text-anchor: middle;
+      }
+      .axis text {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>D3 Bar Chart</h1>
+    <svg id="chart"></svg>
+
+    <script>
+      // 1. The data. In a real app this might come from a CSV or an API call,
+      // but D3 doesn't care where it comes from -- it just needs an array of objects.
+      const data = [
+        { name: "A", value: 1 },
+        { name: "B", value: 5 },
+        { name: "C", value: 8 },
+        { name: "D", value: 10 },
+      ];
+
+      // 2. Layout constants. We reserve "margin" space around the plotting area
+      // so axis labels have somewhere to live without getting clipped.
+      const margin = { top: 30, right: 20, bottom: 40, left: 40 };
+      const width = 400 - margin.left - margin.right;
+      const height = 300 - margin.top - margin.bottom;
+
+      // 3. Select the <svg>, size it, and append a <g> ("group") element that we
+      // shift inward by the margin. Everything we draw from here on happens
+      // inside that group, using coordinates relative to the plot area (not the
+      // whole page) -- this is the standard D3 "margin convention".
+      const svg = d3
+        .select("#chart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+      const g = svg
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // 4. Scales map data values to pixel values. This is the core idea in D3:
+      // you never hardcode pixel positions -- you describe a scale, and D3 does
+      // the math to convert data --> pixels.
+      //
+      // scaleBand is for categorical (discrete) data on an axis, like our names.
+      // It divides the width into evenly spaced bands, one per category, with a
+      // configurable padding (gap) between them.
+      const x = d3
+        .scaleBand()
+        .domain(data.map((d) => d.name)) // the categories: ["A","B","C","D"]
+        .range([0, width])
+        .padding(0.3);
+
+      // scaleLinear is for continuous numeric data, like our values.
+      // domain = the range of the data; range = the range of pixels it maps to.
+      // Note the range is [height, 0] -- SVG y=0 is the TOP, so a larger value
+      // needs to map to a SMALLER y, which is what makes bars grow upward.
+      const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.value)])
+        .nice()
+        .range([height, 0]);
+
+      // 5. The axes. d3.axisBottom/axisLeft generate the tick marks and labels;
+      // we just have to render them into <g> elements and position them.
+      g.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+      g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
+
+      // 6. The classic D3 data join: selectAll(".bar") selects (initially zero)
+      // existing bars, .data(data) binds our array to that selection, and
+      // .join("rect") creates one <rect> per data point (handling enter/update/
+      // exit for you). Each .attr callback receives the datum "d" for that bar.
+      g.selectAll(".bar")
+        .data(data)
+        .join("rect")
+        .attr("class", "bar")
+        .attr("x", (d) => x(d.name))
+        .attr("y", (d) => y(d.value))
+        .attr("width", x.bandwidth())
+        .attr("height", (d) => height - y(d.value))
+        .attr("rx", 3);
+
+      // 7. Bonus: a value label above each bar. Same join pattern, but with
+      // <text> elements this time.
+      g.selectAll(".value-label")
+        .data(data)
+        .join("text")
+        .attr("class", "value-label")
+        .attr("x", (d) => x(d.name) + x.bandwidth() / 2)
+        .attr("y", (d) => y(d.value) - 6)
+        .text((d) => d.value);
+    </script>
+  </body>
+</html>
