@@ -109,8 +109,7 @@
         .attr("x", (d) => x(d.name))
         .attr("y", (d) => y(d.value))
         .attr("width", x.bandwidth())
-        .attr("height", (d) => height - y(d.value))
-        .attr("rx", 3);
+        .attr("height", (d) => height - y(d.value));
 
       // 7. Bonus: a value label above each bar. Same join pattern, but with
       // <text> elements this time.
